@@ -88,6 +88,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Use Base Model table for default translation
+    |--------------------------------------------------------------------------
+    |
+    | this define if translation for default locale will be store in parent
+    | model instead of translation table
+    | Useful when adding translation mechanism in already existing model.
+    |
+    */
+    'use_base_model_for_fallback_locale' => false,
+
+    /*
+    |--------------------------------------------------------------------------
     | Translation Model Namespace
     |--------------------------------------------------------------------------
     |
