@@ -118,8 +118,15 @@ trait Translatable
             if (
                 $this->getLocalesHelper()->has($key)
                 && is_array($values)
+                && !($this->useBaseModelForFallbackLocale() && $key === $this->getFallbackLocale())
             ) {
                 $this->getTranslationOrNew($key)->fill($values);
+                unset($attributes[$key]);
+            } elseif (
+                $this->getLocalesHelper()->has($key)
+                && is_array($values)
+            ) {
+                parent::fill($values);
                 unset($attributes[$key]);
             } else {
                 [$attribute, $locale] = $this->getAttributeAndLocale($key);
@@ -127,8 +134,15 @@ trait Translatable
                 if (
                     $this->getLocalesHelper()->has($locale)
                     && $this->isTranslationAttribute($attribute)
+                    && !($this->useBaseModelForFallbackLocale() && $key === $this->getFallbackLocale())
                 ) {
                     $this->getTranslationOrNew($locale)->fill([$attribute => $values]);
+                    unset($attributes[$key]);
+                } elseif (
+                    $this->getLocalesHelper()->has($locale)
+                    && $this->isTranslationAttribute($attribute)
+                ) {
+                    parent::fill([$attribute => $values]);
                     unset($attributes[$key]);
                 }
             }
@@ -141,7 +155,8 @@ trait Translatable
     {
         [$attribute, $locale] = $this->getAttributeAndLocale($key);
 
-        if ($this->isTranslationAttribute($attribute)) {
+        if ($this->isTranslationAttribute($attribute) &&
+        !($this->useBaseModelForFallbackLocale() && $locale === $this->getFallbackLocale())) {
             if ($this->getTranslation($locale) === null) {
                 return $this->getAttributeValue($attribute);
             }
@@ -156,6 +171,8 @@ trait Translatable
             }
 
             return $this->getAttributeOrFallback($locale, $attribute);
+        } elseif ($this->isTranslationAttribute($attribute)) {
+            return parent::getAttribute($attribute);
         }
 
         return parent::getAttribute($key);
@@ -193,6 +210,10 @@ trait Translatable
         $withFallback = $withFallback === null ? $this->useFallback() : $withFallback;
         $fallbackLocale = $this->getFallbackLocale($locale);
 
+        if ($this->useBaseModelForFallbackLocale() && $locale === $this->getFallbackLocale()) {
+            return $this;
+        }
+        
         if ($translation = $this->getTranslationByLocaleKey($locale)) {
             return $translation;
         }
@@ -295,6 +316,10 @@ trait Translatable
     public function setAttribute($key, $value)
     {
         [$attribute, $locale] = $this->getAttributeAndLocale($key);
+
+        if ($this->useBaseModelForFallbackLocale() && $locale === $this->getFallbackLocale()) {
+            return parent::setAttribute($key, $value);
+        }
 
         if ($this->isTranslationAttribute($attribute)) {
             $this->getTranslationOrNew($locale)->$attribute = $value;
@@ -424,6 +449,10 @@ trait Translatable
 
     private function getTranslationByLocaleKey(string $key): ?Model
     {
+        if ($this->useBaseModelForFallbackLocale() && $key === $this->getFallbackLocale()) {
+            return $this;
+        }
+
         if (
             $this->relationLoaded('translation')
             && $this->translation
@@ -457,5 +486,10 @@ trait Translatable
     public function __isset($key)
     {
         return $this->isTranslationAttribute($key) || parent::__isset($key);
+    }
+
+    public function useBaseModelForFallbackLocale(): bool
+    {
+        return config('translatable.use_base_model_for_fallback_locale', false);
     }
 }
