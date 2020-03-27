@@ -154,9 +154,7 @@ trait Translatable
     public function getAttribute($key)
     {
         [$attribute, $locale] = $this->getAttributeAndLocale($key);
-
-        if ($this->isTranslationAttribute($attribute) &&
-        !($this->useBaseModelForFallbackLocale() && $locale === $this->getFallbackLocale())) {
+        if ($this->isTranslationAttribute($attribute)) {
             if ($this->getTranslation($locale) === null) {
                 return $this->getAttributeValue($attribute);
             }
@@ -166,15 +164,10 @@ trait Translatable
             // Date fields.
             if ($this->hasGetMutator($attribute)) {
                 $this->attributes[$attribute] = $this->getAttributeOrFallback($locale, $attribute);
-
                 return $this->getAttributeValue($attribute);
             }
-
             return $this->getAttributeOrFallback($locale, $attribute);
-        } elseif ($this->isTranslationAttribute($attribute)) {
-            return parent::getAttribute($attribute);
         }
-
         return parent::getAttribute($key);
     }
 
@@ -209,10 +202,6 @@ trait Translatable
         $locale = $locale ?: $this->locale();
         $withFallback = $withFallback === null ? $this->useFallback() : $withFallback;
         $fallbackLocale = $this->getFallbackLocale($locale);
-
-        if ($this->useBaseModelForFallbackLocale() && $locale === $this->getFallbackLocale()) {
-            return $this;
-        }
         
         if ($translation = $this->getTranslationByLocaleKey($locale)) {
             return $translation;
@@ -426,6 +415,9 @@ trait Translatable
             )
             && $this->usePropertyFallback()
         ) {
+            if ($this->useBaseModelForFallbackLocale()) {
+                return $this->getAttributeValue($attribute);
+            }
             $translation = $this->getTranslation($this->getFallbackLocale(), false);
         }
 
@@ -449,10 +441,6 @@ trait Translatable
 
     private function getTranslationByLocaleKey(string $key): ?Model
     {
-        if ($this->useBaseModelForFallbackLocale() && $key === $this->getFallbackLocale()) {
-            return $this;
-        }
-
         if (
             $this->relationLoaded('translation')
             && $this->translation
