@@ -154,7 +154,12 @@ trait Translatable
     public function getAttribute($key)
     {
         [$attribute, $locale] = $this->getAttributeAndLocale($key);
+
         if ($this->isTranslationAttribute($attribute)) {
+            if ($this->useBaseModelForFallbackLocale() && $locale === $this->getFallbackLocale()) {
+                return $this->getAttributeValue($attribute);
+            }
+            
             if ($this->getTranslation($locale) === null) {
                 return $this->getAttributeValue($attribute);
             }
