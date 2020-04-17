@@ -134,7 +134,7 @@ trait Translatable
                 if (
                     $this->getLocalesHelper()->has($locale)
                     && $this->isTranslationAttribute($attribute)
-                    && !($this->useBaseModelForFallbackLocale() && $key === $this->getFallbackLocale())
+                    && !($this->useBaseModelForFallbackLocale() && $locale === $this->getFallbackLocale())
                 ) {
                     $this->getTranslationOrNew($locale)->fill([$attribute => $values]);
                     unset($attributes[$key]);
